@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import {
   AlternativeSuggestion,
   BreakFitResult,
@@ -14,7 +14,10 @@ import {
   OrderType,
   Restaurant,
 } from '@/domain/types';
+import { RestaurantApi } from '@/lib/data/restaurant-api';
 import { mockRestaurantApi } from '@/lib/data/mock-restaurant-api';
+import { supabaseRestaurantApi } from '@/lib/data/supabase-restaurant-api';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import { evaluateBreakFit } from '@/lib/breakfit/estimate';
 import { formatTime24H } from '@/domain/formatters';
 
@@ -33,6 +36,7 @@ interface RestaurantContextType {
   breakFitResult: BreakFitResult;
   isCartOpen: boolean;
   isLoading: boolean;
+  isLiveSupabase: boolean;
   lastPlacedOrder: CustomerOrder | null;
 
   // Cart actions
@@ -61,6 +65,11 @@ interface RestaurantContextType {
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
 export function RestaurantProvider({ children }: { children: React.ReactNode }) {
+  const isLiveSupabase = useMemo(() => isSupabaseConfigured(), []);
+  const api: RestaurantApi = useMemo(() => {
+    return isLiveSupabase ? supabaseRestaurantApi : mockRestaurantApi;
+  }, [isLiveSupabase]);
+
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -81,29 +90,57 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     return formatTime24H(defaultTime);
   });
 
-  const loadData = async () => {
+  const refreshData = useCallback(async () => {
     try {
-      setIsLoading(true);
       const [rest, mn, cats, kitchen, ords] = await Promise.all([
-        mockRestaurantApi.getRestaurant(),
-        mockRestaurantApi.getMenu(),
-        mockRestaurantApi.getCategories(),
-        mockRestaurantApi.getKitchenSnapshot(),
-        mockRestaurantApi.getOrders(),
+        api.getRestaurant(),
+        api.getMenu(),
+        api.getCategories(),
+        api.getKitchenSnapshot(),
+        api.getOrders(),
       ]);
       setRestaurant(rest);
       setMenu(mn);
       setCategories(cats);
       setKitchenSnapshots(kitchen);
       setOrders(ords);
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      console.error('Error refreshing restaurant data:', err);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const loadInitial = async () => {
+      try {
+        setIsLoading(true);
+        await refreshData();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitial();
+
+    // Setup Supabase Realtime when connected
+    if (isLiveSupabase) {
+      const channel = supabase
+        .channel('rushless_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+          refreshData();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'kitchen_stations' }, () => {
+          refreshData();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+          refreshData();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isLiveSupabase, refreshData]);
 
   // Recalculate BreakFit whenever cart, deadline, kitchen, or menu change
   const breakFitResult = useMemo<BreakFitResult>(() => {
@@ -163,14 +200,12 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
 
   const applyAlternativeSuggestion = (suggestion: AlternativeSuggestion) => {
     setCart((prev) => {
-      // Find original item in cart
       const existingIndex = prev.findIndex((ci) => ci.menuItem.id === suggestion.originalItem.id);
       if (existingIndex === -1) return prev;
 
       const originalCartItem = prev[existingIndex];
       const newCart = [...prev];
 
-      // Check if suggested item is already in cart
       const altIndex = newCart.findIndex((ci) => ci.menuItem.id === suggestion.suggestedItem.id);
       if (altIndex > -1) {
         newCart[altIndex] = {
@@ -193,7 +228,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
       throw new Error('Cannot place an empty order');
     }
 
-    const order = await mockRestaurantApi.createDemoOrder({
+    const order = await api.createDemoOrder({
       orderType,
       customerName: customerName.trim() || 'Demo Guest',
       customerPhone: customerPhone.trim() || undefined,
@@ -213,41 +248,26 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, note?: string) => {
-    await mockRestaurantApi.updateDemoOrderStatus(orderId, status, note);
+    await api.updateDemoOrderStatus(orderId, status, note);
     await refreshData();
   };
 
   const createWalkInOrder = async (input: CreateWalkInOrderInput): Promise<CustomerOrder> => {
-    const order = await mockRestaurantApi.createWalkInOrder(input);
+    const order = await api.createWalkInOrder(input);
     await refreshData();
     return order;
   };
 
   const toggleMenuItemAvailability = async (itemId: string, available: boolean) => {
-    await mockRestaurantApi.updateMenuAvailability(itemId, available);
+    await api.updateMenuAvailability(itemId, available);
     await refreshData();
   };
 
   const resetDemoSession = async () => {
-    await mockRestaurantApi.resetDemoData();
+    await api.resetDemoData();
     setCart([]);
     setLastPlacedOrder(null);
     await refreshData();
-  };
-
-  const refreshData = async () => {
-    const [rest, mn, cats, kitchen, ords] = await Promise.all([
-      mockRestaurantApi.getRestaurant(),
-      mockRestaurantApi.getMenu(),
-      mockRestaurantApi.getCategories(),
-      mockRestaurantApi.getKitchenSnapshot(),
-      mockRestaurantApi.getOrders(),
-    ]);
-    setRestaurant(rest);
-    setMenu(mn);
-    setCategories(cats);
-    setKitchenSnapshots(kitchen);
-    setOrders(ords);
   };
 
   return (
@@ -267,6 +287,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         breakFitResult,
         isCartOpen,
         isLoading,
+        isLiveSupabase,
         lastPlacedOrder,
         addToCart,
         removeFromCart,
