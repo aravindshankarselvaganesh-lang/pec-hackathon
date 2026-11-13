@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { Clock, Sparkles, ArrowDown, CheckCircle2, HeartHandshake, UtensilsCrossed } from 'lucide-react';
+import { Clock, ArrowDown, CheckCircle2 } from 'lucide-react';
 
 export function HeroSection() {
   return (

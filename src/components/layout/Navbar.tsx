@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, Utensils, ChefHat, Clock, Sparkles } from 'lucide-react';
+import { ShoppingBag, Utensils, ChefHat, Clock } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 
 export function Navbar() {
@@ -77,9 +77,10 @@ export function Navbar() {
           {/* Floating Tray Button */}
           {!isAdmin && (
             <button
+              type="button"
               onClick={() => setIsCartOpen(true)}
               className="relative px-3.5 sm:px-4 py-2 rounded-full bg-[#183F35] text-white hover:bg-[#245447] active:scale-95 transition-all flex items-center gap-2 shadow-xs group"
-              aria-label={`Open tray with ${totalCartCount} items`}
+              aria-label={`Open cart with ${totalCartCount} items`}
             >
               <ShoppingBag className="w-4 h-4 text-[#E6B65C] group-hover:scale-110 transition-transform" />
               <span className="hidden md:inline text-xs font-bold">My Tray</span>

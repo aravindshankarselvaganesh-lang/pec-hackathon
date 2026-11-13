@@ -3,10 +3,10 @@
 import React from 'react';
 import { ShoppingBag, ArrowRight, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
-import { formatCurrency, formatTimeHHMM } from '@/domain/formatters';
+import { formatCurrency } from '@/domain/formatters';
 
 export function MobileBottomBar() {
-  const { cart, setIsCartOpen, breakFitResult, customerDeadline } = useRestaurant();
+  const { cart, setIsCartOpen, breakFitResult } = useRestaurant();
 
   if (cart.length === 0) return null;
 
@@ -48,12 +48,14 @@ export function MobileBottomBar() {
         </div>
 
         <button
+          type="button"
           onClick={() => setIsCartOpen(true)}
           className="px-4 py-2 rounded-full bg-[#183F35] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+          aria-label={`View cart with ${totalQuantity} items, total ${formatCurrency(subtotal)}`}
         >
-          <ShoppingBag className="w-4 h-4 text-[#E6B65C]" />
+          <ShoppingBag className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
           <span>View Cart</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       </div>
     </div>

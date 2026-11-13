@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock, AlertCircle, Sparkles } from 'lucide-react';
+import { Clock, AlertCircle } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 import { formatTime24H, formatTimeHHMM, parseTimeToTodayDate } from '@/domain/formatters';
 
 export function DeadlineSelector() {
-  const { customerDeadline, setCustomerDeadline, breakFitResult } = useRestaurant();
+  const { customerDeadline, setCustomerDeadline, breakFitResult, currentTime, isHydrated } = useRestaurant();
   const [customError, setCustomError] = useState<string | null>(null);
 
   const setPresetMinutes = (minutesFromNow: number) => {
-    const target = new Date(Date.now() + minutesFromNow * 60000);
+    const target = new Date(currentTime.getTime() + minutesFromNow * 60000);
     const time24 = formatTime24H(target);
     setCustomerDeadline(time24);
     setCustomError(null);
@@ -20,10 +20,9 @@ export function DeadlineSelector() {
     const val = e.target.value;
     if (!val) return;
 
-    const parsed = parseTimeToTodayDate(val);
-    const now = new Date();
+    const parsed = parseTimeToTodayDate(val, currentTime);
 
-    if (parsed.getTime() <= now.getTime()) {
+    if (parsed.getTime() <= currentTime.getTime()) {
       setCustomError('That time has already passed! Pick a time at least a few minutes from now.');
     } else {
       setCustomError(null);
@@ -32,9 +31,9 @@ export function DeadlineSelector() {
   };
 
   const getActivePreset = (): number | null => {
-    const now = new Date();
-    const currentTarget = parseTimeToTodayDate(customerDeadline);
-    const diffMin = Math.round((currentTarget.getTime() - now.getTime()) / 60000);
+    if (!isHydrated) return 15;
+    const currentTarget = parseTimeToTodayDate(customerDeadline, currentTime);
+    const diffMin = Math.round((currentTarget.getTime() - currentTime.getTime()) / 60000);
     if (diffMin >= 9 && diffMin <= 11) return 10;
     if (diffMin >= 14 && diffMin <= 16) return 15;
     if (diffMin >= 19 && diffMin <= 21) return 20;
@@ -79,6 +78,7 @@ export function DeadlineSelector() {
             <button
               type="button"
               onClick={() => setPresetMinutes(10)}
+              aria-pressed={activePreset === 10}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 border active:scale-95 ${
                 activePreset === 10
                   ? 'bg-[#183F35] text-white border-[#183F35] shadow-xs'
@@ -91,6 +91,7 @@ export function DeadlineSelector() {
             <button
               type="button"
               onClick={() => setPresetMinutes(15)}
+              aria-pressed={activePreset === 15}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 border active:scale-95 ${
                 activePreset === 15
                   ? 'bg-[#183F35] text-white border-[#183F35] shadow-xs'
@@ -103,6 +104,7 @@ export function DeadlineSelector() {
             <button
               type="button"
               onClick={() => setPresetMinutes(20)}
+              aria-pressed={activePreset === 20}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 border active:scale-95 ${
                 activePreset === 20
                   ? 'bg-[#183F35] text-white border-[#183F35] shadow-xs'

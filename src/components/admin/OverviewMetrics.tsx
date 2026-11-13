@@ -6,16 +6,15 @@ import { useRestaurant } from '@/context/restaurant-context';
 import { parseTimeToTodayDate } from '@/domain/formatters';
 
 export function OverviewMetrics() {
-  const { orders, kitchenSnapshots } = useRestaurant();
+  const { orders, kitchenSnapshots, currentTime } = useRestaurant();
 
   const activeOrders = orders.filter((o) => o.status !== 'COLLECTED' && o.status !== 'CANCELLED');
   const readyOrders = orders.filter((o) => o.status === 'READY');
 
   // Orders due in next 10 minutes or overdue
-  const now = new Date();
   const dueSoonOrders = activeOrders.filter((o) => {
-    const deadline = parseTimeToTodayDate(o.requestedDeadline);
-    const diffMin = (deadline.getTime() - now.getTime()) / 60000;
+    const deadline = parseTimeToTodayDate(o.requestedDeadline, currentTime);
+    const diffMin = (deadline.getTime() - currentTime.getTime()) / 60000;
     return diffMin <= 10;
   });
 

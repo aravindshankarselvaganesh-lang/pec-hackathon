@@ -9,7 +9,7 @@ import { InteractiveBackground } from '@/components/layout/InteractiveBackground
 export const metadata: Metadata = {
   title: 'RushLess — Crossroads Global Food Hall',
   description:
-    'BreakFit deadline-to-menu feasibility engine for multi-cuisine campus food halls, diners, and local food courts.',
+    'Order ahead with live kitchen wait times so your food is ready the minute you arrive.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-[#F7F5EF] text-[#202923] antialiased selection:bg-[#E6EFE8] selection:text-[#183F35] relative">
+      <body className="min-h-screen flex flex-col bg-[#F7F5EF] text-[#202923] antialiased selection:bg-[#E6EFE8] selection:text-[#183F35] relative overflow-x-hidden">
         <RestaurantProvider>
           <InteractiveBackground />
           <DemoBanner />

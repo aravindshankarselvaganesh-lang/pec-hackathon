@@ -12,7 +12,7 @@ import { RestaurantApi } from './restaurant-api';
 import { DEMO_CATEGORIES, DEMO_MENU_ITEMS, DEMO_RESTAURANT } from '@/data/demo-menu';
 import { INITIAL_KITCHEN_SNAPSHOTS } from '@/data/demo-kitchen';
 import { INITIAL_DEMO_ORDERS } from '@/data/demo-orders';
-import { formatTimeHHMM, parseTimeToTodayDate } from '@/domain/formatters';
+import { formatTimeHHMM } from '@/domain/formatters';
 
 const STORAGE_KEYS = {
   MENU: 'rushless_v3_universal_menu',

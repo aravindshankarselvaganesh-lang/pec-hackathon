@@ -13,8 +13,6 @@ import {
   AlertCircle,
   ExternalLink,
   Sparkles,
-  UtensilsCrossed,
-  MapPin,
   BellRing,
 } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
@@ -48,26 +46,84 @@ const STATUS_STEPS: { status: OrderStatus; label: string; humanDesc: string; ico
   },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function OrderStatusPage() {
   const params = useParams();
-  const orderId = params?.id as string;
-  const { orders, updateOrderStatus } = useRestaurant();
+  const rawId = params?.id;
+  const orderId = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
+  const { orders, updateOrderStatus, getOrder, isLoading } = useRestaurant();
 
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [isSearching, setIsSearching] = useState(true);
 
   useEffect(() => {
-    if (!orderId) return;
-    const found = orders.find(
-      (o) => o.id === orderId || o.orderToken.toLowerCase() === orderId.toLowerCase()
-    );
-    if (found) {
-      setOrder(found);
-      setNotFound(false);
-    } else {
+    let isCancelled = false;
+
+    if (!orderId) {
+      setIsSearching(false);
       setNotFound(true);
+      return;
     }
-  }, [orderId, orders]);
+
+    const checkOrder = async () => {
+      // 1. Check if already present in context orders
+      const found = orders.find(
+        (o) => o.id === orderId || o.orderToken.toLowerCase() === orderId.toLowerCase()
+      );
+      if (found) {
+        if (!isCancelled) {
+          setOrder(found);
+          setNotFound(false);
+          setIsSearching(false);
+        }
+        return;
+      }
+
+      // 2. If not in memory yet, query API/Supabase directly
+      try {
+        const fetched = await getOrder(orderId);
+        if (!isCancelled) {
+          if (fetched) {
+            setOrder(fetched);
+            setNotFound(false);
+          } else if (!isLoading) {
+            setNotFound(true);
+          }
+          setIsSearching(false);
+        }
+      } catch {
+        if (!isCancelled) {
+          setNotFound(true);
+          setIsSearching(false);
+        }
+      }
+    };
+
+    checkOrder();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [orderId, orders, getOrder, isLoading]);
+
+  // Loading state while resolving order
+  if (isSearching || (isLoading && !order)) {
+    return (
+      <main className="max-w-3xl mx-auto px-4 py-20 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#E6EFE8] text-[#183F35] flex items-center justify-center mx-auto shadow-xs animate-pulse">
+          <Clock className="w-7 h-7 text-[#183F35]" />
+        </div>
+        <h2 className="text-xl font-extrabold text-[#183F35]">
+          Locating Order #{orderId}...
+        </h2>
+        <p className="text-xs text-[#707A73]">
+          Checking live kitchen tickets and order status.
+        </p>
+      </main>
+    );
+  }
 
   // Graceful empty / not found state
   if (notFound || !order) {
@@ -310,7 +366,7 @@ export default function OrderStatusPage() {
               <div key={idx} className="flex items-start justify-between text-[#707A73]">
                 <span>• {hist.note}</span>
                 <span className="text-[10px] text-stone-400 whitespace-nowrap ml-2">
-                  {new Date(hist.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatTimeHHMM(hist.timestamp)}
                 </span>
               </div>
             ))}
@@ -327,8 +383,12 @@ export default function OrderStatusPage() {
               </span>
             </div>
             <button
-              onClick={simulateNextStatus}
+              type="button"
+              onClick={() => {
+                void simulateNextStatus();
+              }}
               className="px-4 py-2 rounded-xl bg-[#183F35] text-white font-semibold hover:bg-[#245447] transition-all active:scale-95 text-xs shadow-xs"
+              aria-label="Advance order status"
             >
               Advance Status
             </button>

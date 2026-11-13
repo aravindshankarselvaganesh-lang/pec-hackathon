@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Clock, CheckCircle2, User, Phone, MapPin, ChefHat, PackageCheck, AlertCircle, MessageSquare } from 'lucide-react';
+import { X } from 'lucide-react';
 import { CustomerOrder, OrderStatus } from '@/domain/types';
 import { formatCurrency, formatMinutes, formatTimeHHMM, getStatusBadgeConfig } from '@/domain/formatters';
 
@@ -12,6 +12,16 @@ interface OrderDetailModalProps {
 }
 
 export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetailModalProps) {
+  // Escape key handler
+  React.useEffect(() => {
+    if (!order) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [order, onClose]);
+
   if (!order) return null;
 
   const badge = getStatusBadgeConfig(order.status);
@@ -27,8 +37,18 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#202923]/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E5DD] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#202923]/40 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Order details for ${order.orderToken}`}
+        className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E5DD] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="p-5 border-b border-[#E7E5DD] flex items-center justify-between bg-[#FAF8F3]">
           <div>
@@ -46,7 +66,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
               )}
             </div>
             <p className="text-xs text-[#707A73] mt-0.5">
-              Order placed {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              Order placed {formatTimeHHMM(order.createdAt)}
             </p>
           </div>
 
@@ -57,11 +77,12 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
               {badge.label}
             </span>
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#707A73] hover:text-[#202923] hover:bg-stone-100 transition-colors"
               aria-label="Close modal"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -179,7 +200,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
               <div key={i} className="flex justify-between">
                 <span>• {hist.note}</span>
                 <span className="text-stone-400">
-                  {new Date(hist.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatTimeHHMM(hist.timestamp)}
                 </span>
               </div>
             ))}

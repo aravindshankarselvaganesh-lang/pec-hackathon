@@ -9,8 +9,7 @@ import { BreakFitPanel } from '@/components/breakfit/BreakFitPanel';
 import { CartDrawer } from '@/components/customer/CartDrawer';
 import { MobileBottomBar } from '@/components/customer/MobileBottomBar';
 import { useRestaurant } from '@/context/restaurant-context';
-import { Clock, ShieldAlert, Sparkles, ChefHat, CheckCircle2, Zap, Utensils, Flame, Plus, Heart } from 'lucide-react';
-import { formatCurrency, formatMinutes } from '@/domain/formatters';
+import { Clock, Sparkles, ChefHat, Zap, Flame, Plus } from 'lucide-react';
 
 export default function CustomerStorefrontPage() {
   const { menu, isLoading, addToCart, setIsCartOpen } = useRestaurant();
@@ -49,7 +48,7 @@ export default function CustomerStorefrontPage() {
   };
 
   return (
-    <div className="min-w-0 pb-28 sm:pb-20">
+    <div className="min-w-0 pb-28 sm:pb-20 overflow-x-hidden">
       {/* 1. Hero Section with Visual Anchor SVG Blob */}
       <HeroSection />
 
@@ -107,10 +106,12 @@ export default function CustomerStorefrontPage() {
               </div>
 
               <button
+                type="button"
                 onClick={() => handleAddCombo(['item-bombay-sandwich', 'item-kulhad-chai'])}
                 className="px-5 py-3 rounded-full bg-[#183F35] text-white hover:bg-[#245447] text-xs font-extrabold flex items-center justify-center gap-2 self-start sm:self-center transition-all shadow-xs active:scale-95 whitespace-nowrap hover:-translate-y-0.5"
+                aria-label="Add Bombay Grill Sandwich and Kulhad Chai combo to cart"
               >
-                <Plus className="w-4 h-4 text-[#E6B65C]" />
+                <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
                 <span>Add Combo</span>
               </button>
             </div>
@@ -142,10 +143,12 @@ export default function CustomerStorefrontPage() {
               </div>
 
               <button
+                type="button"
                 onClick={() => handleAddCombo(['item-smash-burger', 'item-truffle-fries', 'item-nimbu-shikanji'])}
                 className="px-5 py-3 rounded-full bg-[#183F35] text-white hover:bg-[#245447] text-xs font-extrabold flex items-center justify-center gap-2 self-start sm:self-center transition-all shadow-xs active:scale-95 whitespace-nowrap hover:-translate-y-0.5"
+                aria-label="Add Smash Burger, Peri Peri Fries, and Shikanji combo to cart"
               >
-                <Plus className="w-4 h-4 text-[#E6B65C]" />
+                <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
                 <span>Add Combo</span>
               </button>
             </div>
@@ -176,12 +179,13 @@ export default function CustomerStorefrontPage() {
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="bg-white rounded-[32px] border border-[#E7E5DD] p-12 text-center space-y-3 shadow-diffuse">
-              <ChefHat className="w-12 h-12 text-stone-300 mx-auto" />
+              <ChefHat className="w-12 h-12 text-stone-300 mx-auto" aria-hidden="true" />
               <h4 className="font-extrabold text-base text-[#202923]">No items match your criteria</h4>
               <p className="text-xs text-[#707A73] max-w-sm mx-auto">
                 Try clearing express filters or click &ldquo;All Cuisines&rdquo; to reset category filters.
               </p>
               <button
+                type="button"
                 onClick={() => {
                   setSelectedCategoryId('all');
                   setSearchQuery('');

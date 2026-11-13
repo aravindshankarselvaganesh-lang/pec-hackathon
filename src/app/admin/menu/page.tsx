@@ -8,9 +8,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Flame,
-  LayoutDashboard,
-  Sparkles,
 } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 import { formatCurrency, formatMinutes } from '@/domain/formatters';
@@ -75,10 +72,13 @@ export default function AdminMenuManagementPage() {
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#E7E5DD] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold" role="tablist" aria-label="Menu categories">
           {categories.map((cat) => (
             <button
               key={cat.id}
+              type="button"
+              role="tab"
+              aria-selected={selectedCategory === cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all border ${
                 selectedCategory === cat.id
@@ -93,12 +93,13 @@ export default function AdminMenuManagementPage() {
 
         {/* Search */}
         <div className="relative w-full sm:w-64">
-          <Search className="w-3.5 h-3.5 text-[#707A73] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[#707A73] absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search dish or station..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search dish or station"
             className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[#E7E5DD] text-xs text-[#202923] placeholder:text-[#707A73] focus:outline-none focus:border-[#183F35]"
           />
         </div>
@@ -171,8 +172,10 @@ export default function AdminMenuManagementPage() {
 
                     <td className="py-3.5 px-4 text-right">
                       <button
+                        type="button"
                         onClick={() => handleToggle(item.id, item.isAvailable)}
                         disabled={isToggling}
+                        aria-label={`${item.isAvailable ? 'Mark ' + item.name + ' as sold out' : 'Mark ' + item.name + ' as available'}`}
                         className={`px-3 py-1.5 rounded-xl font-semibold text-xs transition-all border ${
                           item.isAvailable
                             ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'

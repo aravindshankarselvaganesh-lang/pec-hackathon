@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, X, Zap, Leaf, Flame, Sparkles } from 'lucide-react';
+import { Search, X, Zap, Leaf, Flame } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 
 export type QuickFilterType = 'all' | 'under5' | 'pureveg' | 'bestseller';
@@ -45,70 +45,79 @@ export function MenuCategoryTabs({
 
         {/* Search Input with Organic Glassmorphic Pill */}
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#707A73] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#707A73] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search dishes..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search dishes"
             className="w-full pl-10 pr-9 py-2.5 rounded-full border border-[#E7E5DD] bg-white/80 backdrop-blur-md text-xs text-[#202923] placeholder:text-[#707A73] focus:outline-none focus:ring-2 focus:ring-[#183F35]/20 focus:border-[#183F35] shadow-2xs transition-all"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => onSearchChange('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#707A73] hover:text-[#202923] p-1"
               aria-label="Clear search"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )}
         </div>
       </div>
 
       {/* Speed & Dietary Quick Filter Pills */}
-      <div className="flex items-center gap-2 flex-wrap pt-1">
+      <div className="flex items-center gap-2 flex-wrap pt-1" role="group" aria-label="Express filters">
         <span className="text-[11px] font-extrabold text-[#707A73] uppercase tracking-wider mr-1">
           Filters:
         </span>
 
         <button
+          type="button"
           onClick={() => onQuickFilterChange(quickFilter === 'under5' ? 'all' : 'under5')}
+          aria-pressed={quickFilter === 'under5'}
           className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-200 border active:scale-95 shadow-2xs ${
             quickFilter === 'under5'
               ? 'bg-[#E6B65C] text-[#183F35] border-[#D4A346] shadow-xs'
               : 'bg-white text-[#202923] border-[#E7E5DD] hover:bg-[#FAF8F3]'
           }`}
         >
-          <Zap className="w-3.5 h-3.5 text-amber-700" />
+          <Zap className="w-3.5 h-3.5 text-amber-700" aria-hidden="true" />
           <span>≤ 5 mins</span>
         </button>
 
         <button
+          type="button"
           onClick={() => onQuickFilterChange(quickFilter === 'pureveg' ? 'all' : 'pureveg')}
+          aria-pressed={quickFilter === 'pureveg'}
           className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-200 border active:scale-95 shadow-2xs ${
             quickFilter === 'pureveg'
               ? 'bg-emerald-700 text-white border-emerald-800 shadow-xs'
               : 'bg-white text-[#202923] border-[#E7E5DD] hover:bg-[#FAF8F3]'
           }`}
         >
-          <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+          <Leaf className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
           <span>Pure Veg</span>
         </button>
 
         <button
+          type="button"
           onClick={() => onQuickFilterChange(quickFilter === 'bestseller' ? 'all' : 'bestseller')}
+          aria-pressed={quickFilter === 'bestseller'}
           className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-200 border active:scale-95 shadow-2xs ${
             quickFilter === 'bestseller'
               ? 'bg-[#183F35] text-white border-[#183F35] shadow-xs'
               : 'bg-white text-[#202923] border-[#E7E5DD] hover:bg-[#FAF8F3]'
           }`}
         >
-          <Flame className="w-3.5 h-3.5 text-[#E6B65C]" />
+          <Flame className="w-3.5 h-3.5 text-[#E6B65C]" aria-hidden="true" />
           <span>Popular</span>
         </button>
 
         {quickFilter !== 'all' && (
           <button
+            type="button"
             onClick={() => onQuickFilterChange('all')}
             className="text-[11px] text-[#707A73] hover:text-[#183F35] font-semibold underline ml-auto"
           >
@@ -118,7 +127,11 @@ export function MenuCategoryTabs({
       </div>
 
       {/* Category Pills (horizontally scrollable organic pebble buttons) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1">
+      <div
+        className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1"
+        role="tablist"
+        aria-label="Food categories"
+      >
         {categories.map((cat) => {
           const count = getCategoryCount(cat.id);
           const isSelected = selectedCategoryId === cat.id;
@@ -126,6 +139,9 @@ export function MenuCategoryTabs({
           return (
             <button
               key={cat.id}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
               onClick={() => onSelectCategory(cat.id)}
               className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-2 border active:scale-95 shadow-2xs ${
                 isSelected

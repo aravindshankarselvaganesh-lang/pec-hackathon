@@ -13,7 +13,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
-import { formatCurrency, formatMinutes, formatTimeHHMM } from '@/domain/formatters';
+import { formatCurrency, formatTimeHHMM } from '@/domain/formatters';
 
 export function BreakFitPanel() {
   const {
@@ -43,7 +43,6 @@ export function BreakFitPanel() {
 
   const {
     feasibility,
-    statusLabel,
     estimatedReadyTime,
     totalEstimatedMinutes,
     bufferMinutes,
@@ -51,14 +50,11 @@ export function BreakFitPanel() {
     explanation,
     alternativeSuggestions,
     suggestedLaterDeadline,
-    minutesRemainingToDeadline,
   } = breakFitResult;
 
   const isFeasible = feasibility === 'FEASIBLE';
   const isRisky = feasibility === 'RISKY';
   const isInfeasible = feasibility === 'INFEASIBLE';
-
-  const timeSlack = minutesRemainingToDeadline - totalEstimatedMinutes;
 
   return (
     <div
@@ -147,10 +143,11 @@ export function BreakFitPanel() {
             <button
               type="button"
               onClick={() => setIsExplainerOpen(!isExplainerOpen)}
+              aria-expanded={isExplainerOpen}
               className="text-[#183F35] font-bold flex items-center gap-1 hover:underline ml-2"
             >
               <span>{isExplainerOpen ? 'Hide details' : 'How it works'}</span>
-              {isExplainerOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {isExplainerOpen ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
           </div>
 
@@ -219,6 +216,7 @@ export function BreakFitPanel() {
                   <button
                     type="button"
                     onClick={() => applyAlternativeSuggestion(suggestion)}
+                    aria-label={`Swap ${suggestion.originalItem.name} for ${suggestion.suggestedItem.name}`}
                     className="px-4 py-2 rounded-xl bg-[#183F35] text-white font-bold text-xs hover:bg-[#245447] active:scale-95 transition-all shadow-xs self-start sm:self-center whitespace-nowrap"
                   >
                     Swap Item

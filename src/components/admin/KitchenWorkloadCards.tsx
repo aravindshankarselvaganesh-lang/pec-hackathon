@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChefHat, Flame, Coffee, Sparkles } from 'lucide-react';
+import { ChefHat, Flame, Coffee } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 import { formatMinutes } from '@/domain/formatters';
 
@@ -54,7 +54,9 @@ export function KitchenWorkloadCards() {
         {kitchenSnapshots.map((station) => {
           const Icon = getStationIcon(station.stationId);
           const badge = getStatusBadge(station.status);
-          const loadPercentage = Math.min(100, Math.round((station.activeLoad / station.totalCapacity) * 100));
+          const loadPercentage = station.totalCapacity > 0
+            ? Math.min(100, Math.round((station.activeLoad / station.totalCapacity) * 100))
+            : 0;
 
           return (
             <div

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Minus, Check, ShoppingBag, Utensils } from 'lucide-react';
+import { X, ShoppingBag, Utensils } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 import { MenuItem, OrderType } from '@/domain/types';
 import { formatCurrency, formatMinutes } from '@/domain/formatters';
@@ -20,6 +20,16 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
   const [selectedItemQuantities, setSelectedItemQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Close on Escape key press
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -80,8 +90,18 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E5DD] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="New Walk-In Order Modal"
+        className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E5DD] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
         <div className="p-5 border-b border-[#E7E5DD] flex items-center justify-between bg-[#FAF8F3]">
           <div>
             <h3 className="font-extrabold text-base text-[#183F35]">
@@ -92,10 +112,12 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#707A73] hover:text-[#202923] hover:bg-stone-100"
+            className="p-1.5 rounded-lg text-[#707A73] hover:text-[#202923] hover:bg-stone-100 transition-colors"
+            aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -109,7 +131,7 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
                 orderType === 'TAKEAWAY' ? 'bg-white text-[#183F35] shadow-xs' : 'text-[#707A73]'
               }`}
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Takeaway</span>
             </button>
             <button
@@ -119,7 +141,7 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
                 orderType === 'DINE_IN' ? 'bg-white text-[#183F35] shadow-xs' : 'text-[#707A73]'
               }`}
             >
-              <Utensils className="w-3.5 h-3.5" />
+              <Utensils className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Dine-In</span>
             </button>
           </div>
@@ -127,10 +149,11 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
           {/* Customer / Table info */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[#707A73] font-medium mb-1">
+              <label htmlFor="walkin-guest-name" className="block text-[#707A73] font-medium mb-1">
                 Guest Name
               </label>
               <input
+                id="walkin-guest-name"
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
@@ -139,10 +162,11 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
             </div>
             {orderType === 'DINE_IN' && (
               <div>
-                <label className="block text-[#707A73] font-medium mb-1">
+                <label htmlFor="walkin-table-number" className="block text-[#707A73] font-medium mb-1">
                   Table Number
                 </label>
                 <input
+                  id="walkin-table-number"
                   type="text"
                   placeholder="e.g. Table 6"
                   value={tableNumber}
@@ -181,6 +205,7 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
                           <button
                             type="button"
                             onClick={() => handleQuantityChange(item.id, -1)}
+                            aria-label={`Decrease quantity of ${item.name}`}
                             className="w-6 h-6 rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-bold"
                           >
                             -
@@ -194,6 +219,7 @@ export function WalkInOrderModal({ isOpen, onClose }: WalkInOrderModalProps) {
                         <button
                           type="button"
                           onClick={() => handleQuantityChange(item.id, 1)}
+                          aria-label={`Increase quantity of ${item.name}`}
                           className="w-6 h-6 rounded bg-[#183F35] text-white hover:bg-[#245447] flex items-center justify-center font-bold"
                         >
                           +

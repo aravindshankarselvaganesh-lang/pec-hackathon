@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Clock,
@@ -8,14 +8,8 @@ import {
   Zap,
   ChefHat,
   Plus,
-  Flame,
   ArrowRight,
-  Coffee,
-  CheckCircle2,
   UtensilsCrossed,
-  Layers,
-  Heart,
-  TrendingUp,
 } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
 import { DEMO_MENU_ITEMS } from '@/data/demo-menu';
@@ -30,13 +24,22 @@ export function BentoShowcase() {
     breakFitResult,
     addToCart,
     setIsCartOpen,
+    currentTime,
+    isHydrated,
   } = useRestaurant();
 
-  const [activePreset, setActivePreset] = useState<number | null>(15);
+  const activePreset = useMemo<number | null>(() => {
+    if (!isHydrated) return 15;
+    const deadlineDate = parseTimeToTodayDate(customerDeadline, currentTime);
+    const diff = Math.round((deadlineDate.getTime() - currentTime.getTime()) / 60000);
+    if (diff >= 9 && diff <= 11) return 10;
+    if (diff >= 14 && diff <= 16) return 15;
+    if (diff >= 24 && diff <= 26) return 25;
+    return null;
+  }, [customerDeadline, currentTime, isHydrated]);
 
   const setPresetMinutes = (min: number) => {
-    setActivePreset(min);
-    const target = new Date(Date.now() + min * 60000);
+    const target = new Date(currentTime.getTime() + min * 60000);
     setCustomerDeadline(formatTime24H(target));
   };
 
@@ -102,6 +105,7 @@ export function BentoShowcase() {
                     key={preset.min}
                     type="button"
                     onClick={() => setPresetMinutes(preset.min)}
+                    aria-pressed={activePreset === preset.min}
                     className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 border active:scale-95 flex items-center gap-1.5 ${
                       activePreset === preset.min
                         ? 'bg-[#183F35] text-white border-[#183F35] shadow-sm'
@@ -114,16 +118,16 @@ export function BentoShowcase() {
 
                 {/* Custom Time Input */}
                 <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#E7E5DD] shadow-2xs">
-                  <span className="text-[11px] text-[#707A73] font-medium">Custom:</span>
+                  <label htmlFor="bento-custom-time" className="text-[11px] text-[#707A73] font-medium">Custom:</label>
                   <input
+                    id="bento-custom-time"
                     type="time"
                     value={customerDeadline}
                     onChange={(e) => {
-                      setActivePreset(null);
                       setCustomerDeadline(e.target.value);
                     }}
                     className="text-xs font-extrabold text-[#183F35] bg-transparent focus:outline-none"
-                    aria-label="Set custom break time"
+                    aria-label="Set custom pickup time"
                   />
                 </div>
               </div>
@@ -180,13 +184,20 @@ export function BentoShowcase() {
 
             {/* Asymmetrical Curved Photo Container with Floating Tag */}
             <div className="relative h-44 w-full rounded-[24px] overflow-hidden bg-stone-100 shadow-inner">
-              <Image
-                src={chefSpecial.image}
-                alt={chefSpecial.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 400px"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+              {chefSpecial.image ? (
+                <Image
+                  src={chefSpecial.image}
+                  alt={chefSpecial.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#E6EFE8] text-[#183F35]">
+                  <UtensilsCrossed className="w-8 h-8 opacity-40 mb-1" />
+                  <span className="text-xs font-semibold">{chefSpecial.name}</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
 
               {/* Overlapping Floating Price Tag */}
@@ -230,8 +241,9 @@ export function BentoShowcase() {
                 setIsCartOpen(true);
               }}
               className="px-4 py-2 rounded-full bg-[#183F35] text-white hover:bg-[#245447] active:scale-95 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              aria-label={`Add chef special ${chefSpecial.name} to cart`}
             >
-              <Plus className="w-3.5 h-3.5 text-[#E6B65C]" />
+              <Plus className="w-3.5 h-3.5 text-[#E6B65C]" aria-hidden="true" />
               <span>Add to Cart</span>
             </button>
           </div>
@@ -335,13 +347,19 @@ export function BentoShowcase() {
               >
                 <div className="space-y-1.5">
                   <div className="relative h-20 w-full rounded-xl overflow-hidden bg-stone-100">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      sizes="150px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        sizes="150px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#E6EFE8] text-[#183F35]">
+                        <UtensilsCrossed className="w-5 h-5 opacity-40" />
+                      </div>
+                    )}
                     <span className="absolute bottom-1 right-1 bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
                       {item.preparationTimeMinutes}m
                     </span>
@@ -358,8 +376,9 @@ export function BentoShowcase() {
                   type="button"
                   onClick={() => addToCart(item, 1)}
                   className="mt-2 w-full py-1.5 rounded-lg bg-[#FAF8F3] hover:bg-[#183F35] text-[#183F35] hover:text-white border border-[#E7E5DD] hover:border-[#183F35] text-[11px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1 shadow-2xs"
+                  aria-label={`Add ${item.name} to cart`}
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3" aria-hidden="true" />
                   <span>Add</span>
                 </button>
               </div>

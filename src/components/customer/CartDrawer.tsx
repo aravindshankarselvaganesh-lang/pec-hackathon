@@ -11,9 +11,6 @@ import {
   Clock,
   ArrowRight,
   MessageSquare,
-  Sparkles,
-  MapPin,
-  Check,
   AlertCircle,
   ShoppingBag,
 } from 'lucide-react';
@@ -53,12 +50,24 @@ export function CartDrawer() {
   const [formError, setFormError] = useState<string | null>(null);
   const [activeNoteItemId, setActiveNoteItemId] = useState<string | null>(null);
 
+  // Close on Escape key press
+  React.useEffect(() => {
+    if (!isCartOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCartOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCartOpen, setIsCartOpen]);
+
   const subtotal = cart.reduce((acc, curr) => acc + curr.menuItem.price * curr.quantity, 0);
   const tax = Math.round(subtotal * 0.05);
   const total = subtotal + tax;
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCheckout = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (cart.length === 0) return;
 
     if (!customerName.trim()) {
@@ -92,16 +101,23 @@ export function CartDrawer() {
       {/* Soft Dimmed Backdrop */}
       <div
         onClick={() => setIsCartOpen(false)}
+        role="presentation"
+        aria-hidden="true"
         className="fixed inset-0 bg-[#202923]/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-md bg-[#FAF8F3] shadow-2xl flex flex-col justify-between border-l border-[#E7E5DD] animate-in slide-in-from-right duration-300">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Shopping Cart Drawer"
+          className="w-screen max-w-md bg-[#FAF8F3] shadow-2xl flex flex-col justify-between border-l border-[#E7E5DD] animate-in slide-in-from-right duration-300"
+        >
           {/* Drawer Header */}
           <div className="p-4 sm:p-5 bg-white border-b border-[#E7E5DD] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-[#183F35] text-white flex items-center justify-center shadow-xs">
-                <UtensilsCrossed className="w-4 h-4 text-[#E6B65C]" />
+                <UtensilsCrossed className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-[#183F35]">Your Cart</h3>
@@ -115,11 +131,12 @@ export function CartDrawer() {
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setIsCartOpen(false)}
               className="p-2 rounded-xl text-[#707A73] hover:text-[#202923] hover:bg-[#F7F5EF] transition-colors"
               aria-label="Close cart"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -241,9 +258,10 @@ export function CartDrawer() {
                             type="button"
                             onClick={() => removeFromCart(ci.menuItem.id)}
                             className="p-1 text-stone-400 hover:text-rose-600 transition-colors"
-                            title="Remove from tray"
+                            aria-label={`Remove ${ci.menuItem.name} from cart`}
+                            title={`Remove ${ci.menuItem.name}`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
                         </div>
                       </div>
@@ -304,10 +322,11 @@ export function CartDrawer() {
 
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-[#202923] font-semibold mb-1">
+                    <label htmlFor="cart-customer-name" className="block text-[#202923] font-semibold mb-1">
                       Your Name <span className="text-rose-500">*</span>
                     </label>
                     <input
+                      id="cart-customer-name"
                       type="text"
                       placeholder="e.g. Ananya, Kabir"
                       value={customerName}
@@ -319,11 +338,12 @@ export function CartDrawer() {
                   {orderType === 'DINE_IN' ? (
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-[#202923] font-semibold">
+                        <label htmlFor="cart-table-number" className="block text-[#202923] font-semibold">
                           Table Number <span className="text-rose-500">*</span>
                         </label>
                       </div>
                       <input
+                        id="cart-table-number"
                         type="text"
                         placeholder="e.g. Table 4 or Bar 2"
                         value={tableNumber}
@@ -351,10 +371,11 @@ export function CartDrawer() {
                     </div>
                   ) : (
                     <div>
-                      <label className="block text-[#202923] font-semibold mb-1">
+                      <label htmlFor="cart-customer-phone" className="block text-[#202923] font-semibold mb-1">
                         Phone (Optional)
                       </label>
                       <input
+                        id="cart-customer-phone"
                         type="tel"
                         placeholder="e.g. 98765 43210"
                         value={customerPhone}

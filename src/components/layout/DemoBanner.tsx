@@ -20,12 +20,14 @@ export function DemoBanner() {
           </span>
         </div>
         <button
+          type="button"
           onClick={() => {
             if (confirm('Reset demo orders and kitchen wait times?')) {
-              resetDemoSession();
+              void resetDemoSession();
             }
           }}
           className="inline-flex items-center gap-1.5 text-[11px] text-[#E6EFE8] hover:text-white underline underline-offset-4 decoration-[#E6B65C] transition-colors ml-auto sm:ml-0 active:scale-95"
+          aria-label="Reset demo sample orders and kitchen wait times"
           title="Reset sample orders and availability"
         >
           <RotateCcw className="w-3 h-3 text-[#E6B65C]" />

@@ -4,12 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Plus,
-  RotateCcw,
-  UtensilsCrossed,
   SlidersHorizontal,
-  Flame,
-  LayoutDashboard,
-  Sparkles,
 } from 'lucide-react';
 import { OverviewMetrics } from '@/components/admin/OverviewMetrics';
 import { KitchenWorkloadCards } from '@/components/admin/KitchenWorkloadCards';
@@ -18,7 +13,7 @@ import { WalkInOrderModal } from '@/components/admin/WalkInOrderModal';
 import { useRestaurant } from '@/context/restaurant-context';
 
 export default function RestaurantAdminPage() {
-  const { resetDemoSession, restaurant } = useRestaurant();
+  const { restaurant } = useRestaurant();
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
 
   return (
@@ -42,10 +37,11 @@ export default function RestaurantAdminPage() {
         {/* Quick Top Actions */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            type="button"
             onClick={() => setIsWalkInModalOpen(true)}
             className="px-4 py-2 rounded-xl bg-[#183F35] text-white hover:bg-[#245447] active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
           >
-            <Plus className="w-4 h-4 text-[#E6B65C]" />
+            <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
             <span>New Walk-In Order</span>
           </button>
 

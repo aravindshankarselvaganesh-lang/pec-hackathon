@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Clock, Plus, Minus, ChefHat, Sparkles, AlertCircle, UtensilsCrossed } from 'lucide-react';
+import { Clock, Plus, Minus, ChefHat, AlertCircle, UtensilsCrossed } from 'lucide-react';
 import { MenuItem } from '@/domain/types';
 import { useRestaurant } from '@/context/restaurant-context';
 import { formatCurrency, formatMinutes } from '@/domain/formatters';
@@ -40,7 +40,7 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
       <div>
         {/* Photo Container */}
         <div className="relative h-48 w-full bg-stone-100 overflow-hidden">
-          {!imageError ? (
+          {!imageError && Boolean(item.image) ? (
             <Image
               src={item.image}
               alt={item.name}
@@ -162,6 +162,7 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
       <div className="p-4 pt-0">
         {!item.isAvailable ? (
           <button
+            type="button"
             disabled
             className="w-full py-2.5 rounded-full bg-stone-200 text-stone-500 font-semibold text-xs cursor-not-allowed text-center"
           >
@@ -169,30 +170,34 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
           </button>
         ) : quantity === 0 ? (
           <button
+            type="button"
             onClick={() => addToCart(item, 1)}
+            aria-label={`Add ${item.name} to cart`}
             className="w-full py-2.5 rounded-full bg-[#183F35] text-white hover:bg-[#245447] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs min-h-[44px]"
           >
-            <Plus className="w-4 h-4 text-[#E6B65C]" />
+            <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
             <span>Add</span>
           </button>
         ) : (
           <div className="flex items-center justify-between bg-[#F7F5EF] border border-[#E7E5DD] rounded-full p-1 min-h-[44px]">
             <button
+              type="button"
               onClick={() => updateQuantity(item.id, -1)}
               className="w-9 h-9 rounded-full bg-white border border-[#E7E5DD] text-[#202923] hover:bg-[#E6EFE8] flex items-center justify-center transition-colors active:scale-90"
               aria-label={`Decrease quantity of ${item.name}`}
             >
-              <Minus className="w-3.5 h-3.5" />
+              <Minus className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
-            <span className="font-extrabold text-xs sm:text-sm text-[#183F35] px-3">
+            <span className="font-extrabold text-xs sm:text-sm text-[#183F35] px-3" aria-live="polite">
               {quantity} in cart
             </span>
             <button
+              type="button"
               onClick={() => updateQuantity(item.id, 1)}
               className="w-9 h-9 rounded-full bg-[#183F35] text-white hover:bg-[#245447] flex items-center justify-center transition-colors active:scale-90 shadow-2xs"
               aria-label={`Increase quantity of ${item.name}`}
             >
-              <Plus className="w-3.5 h-3.5 text-white" />
+              <Plus className="w-3.5 h-3.5 text-white" aria-hidden="true" />
             </button>
           </div>
         )}

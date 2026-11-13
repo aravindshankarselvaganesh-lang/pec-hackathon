@@ -5,33 +5,27 @@ import {
   Clock,
   Eye,
   AlertTriangle,
-  CheckCircle2,
-  Filter,
   Search,
-  User,
   ShoppingBag,
   UtensilsCrossed,
   MessageSquare,
-  Sparkles,
 } from 'lucide-react';
 import { useRestaurant } from '@/context/restaurant-context';
-import { CustomerOrder, OrderStatus } from '@/domain/types';
-import { formatCurrency, formatTimeHHMM, getStatusBadgeConfig, parseTimeToTodayDate } from '@/domain/formatters';
+import { CustomerOrder } from '@/domain/types';
+import { formatTimeHHMM, getStatusBadgeConfig, parseTimeToTodayDate } from '@/domain/formatters';
 import { OrderDetailModal } from './OrderDetailModal';
 
 export function LiveOrderQueue() {
-  const { orders, updateOrderStatus } = useRestaurant();
+  const { orders, updateOrderStatus, currentTime } = useRestaurant();
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null);
 
-  const now = new Date();
-
   // Helper to determine deadline urgency
   const getDeadlineRisk = (order: CustomerOrder) => {
     if (order.status === 'COLLECTED' || order.status === 'CANCELLED') return 'NORMAL';
-    const deadline = parseTimeToTodayDate(order.requestedDeadline);
-    const diffMinutes = Math.round((deadline.getTime() - now.getTime()) / 60000);
+    const deadline = parseTimeToTodayDate(order.requestedDeadline, currentTime);
+    const diffMinutes = Math.round((deadline.getTime() - currentTime.getTime()) / 60000);
 
     if (diffMinutes < 0) return 'OVERDUE';
     if (diffMinutes <= 8) return 'AT_RISK';
@@ -73,19 +67,20 @@ export function LiveOrderQueue() {
 
         {/* Search */}
         <div className="relative w-full md:w-64">
-          <Search className="w-3.5 h-3.5 text-[#707A73] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[#707A73] absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search token, name, or dish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search token, customer name, or dish"
             className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[#E7E5DD] text-xs text-[#202923] placeholder:text-[#707A73] focus:outline-none focus:border-[#183F35]"
           />
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold" role="tablist" aria-label="Order status filters">
         {[
           { id: 'active', label: 'Active' },
           { id: 'PENDING', label: 'Incoming' },
@@ -97,6 +92,9 @@ export function LiveOrderQueue() {
         ].map((tab) => (
           <button
             key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === tab.id}
             onClick={() => setStatusFilter(tab.id)}
             className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all border ${
               statusFilter === tab.id
@@ -225,6 +223,7 @@ export function LiveOrderQueue() {
                 <div className="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[#E7E5DD]">
                   {order.status === 'PENDING' && (
                     <button
+                      type="button"
                       onClick={() => updateOrderStatus(order.id, 'ACCEPTED', 'Counter accepted ticket')}
                       className="px-3 py-1.5 rounded-xl bg-[#183F35] text-white text-xs font-semibold hover:bg-[#245447] active:scale-95 transition-all shadow-xs"
                     >
@@ -234,6 +233,7 @@ export function LiveOrderQueue() {
 
                   {order.status === 'ACCEPTED' && (
                     <button
+                      type="button"
                       onClick={() => updateOrderStatus(order.id, 'PREPARING', 'Station chef started grilling & cooking')}
                       className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 text-xs font-semibold hover:bg-blue-100 active:scale-95 transition-all"
                     >
@@ -243,6 +243,7 @@ export function LiveOrderQueue() {
 
                   {order.status === 'PREPARING' && (
                     <button
+                      type="button"
                       onClick={() => updateOrderStatus(order.id, 'READY', 'Order plated fresh and passed to counter')}
                       className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 active:scale-95 transition-all shadow-xs"
                     >
@@ -252,6 +253,7 @@ export function LiveOrderQueue() {
 
                   {order.status === 'READY' && (
                     <button
+                      type="button"
                       onClick={() => updateOrderStatus(order.id, 'COLLECTED', 'Handed over to dining guest')}
                       className="px-3 py-1.5 rounded-xl bg-[#202923] text-white text-xs font-semibold hover:bg-black active:scale-95 transition-all shadow-xs"
                     >
@@ -260,12 +262,13 @@ export function LiveOrderQueue() {
                   )}
 
                   <button
+                    type="button"
                     onClick={() => setSelectedOrder(order)}
                     className="p-2 rounded-xl border border-[#E7E5DD] bg-white text-[#707A73] hover:text-[#202923] hover:bg-[#F7F5EF] active:scale-95 transition-all"
-                    title="View full order ticket"
-                    aria-label="View order ticket"
+                    title={`View order ticket for ${order.orderToken}`}
+                    aria-label={`View order ticket for ${order.orderToken}`}
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   AlternativeSuggestion,
   BreakFitResult,
@@ -38,6 +38,8 @@ interface RestaurantContextType {
   isLoading: boolean;
   isLiveSupabase: boolean;
   lastPlacedOrder: CustomerOrder | null;
+  currentTime: Date;
+  isHydrated: boolean;
 
   // Cart actions
   addToCart: (item: MenuItem, quantity?: number) => void;
@@ -54,6 +56,7 @@ interface RestaurantContextType {
   applyAlternativeSuggestion: (suggestion: AlternativeSuggestion) => void;
 
   // Order & Admin actions
+  getOrder: (id: string) => Promise<CustomerOrder | null>;
   placeCustomerOrder: () => Promise<CustomerOrder>;
   updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => Promise<void>;
   createWalkInOrder: (input: CreateWalkInOrderInput) => Promise<CustomerOrder>;
@@ -65,10 +68,8 @@ interface RestaurantContextType {
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
 export function RestaurantProvider({ children }: { children: React.ReactNode }) {
-  const isLiveSupabase = useMemo(() => isSupabaseConfigured(), []);
-  const api: RestaurantApi = useMemo(() => {
-    return isLiveSupabase ? supabaseRestaurantApi : mockRestaurantApi;
-  }, [isLiveSupabase]);
+  const initialConfigured = useMemo(() => isSupabaseConfigured(), []);
+  const [isLiveSupabase, setIsLiveSupabase] = useState<boolean>(initialConfigured);
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
@@ -84,74 +85,151 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<CustomerOrder | null>(null);
 
-  // Initialize deadline to 15 minutes from now in "HH:MM"
-  const [customerDeadline, setCustomerDeadline] = useState<string>(() => {
-    const defaultTime = new Date(Date.now() + 15 * 60000);
-    return formatTime24H(defaultTime);
-  });
+  // Hydration safety: use a fixed baseline during SSR, synchronize to client clock in useEffect
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<Date>(() => new Date(2026, 0, 1, 12, 0, 0));
+  const [customerDeadline, setCustomerDeadline] = useState<string>('12:15');
+
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    setIsHydrated(true);
+
+    const now = new Date();
+    setCurrentTime(now);
+    const defaultTime = new Date(now.getTime() + 15 * 60000);
+    setCustomerDeadline(formatTime24H(defaultTime));
+
+    const intervalId = setInterval(() => {
+      if (isMountedRef.current) {
+        setCurrentTime(new Date());
+      }
+    }, 30000);
+
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const refreshData = useCallback(async () => {
+    if (isLiveSupabase) {
+      try {
+        const [rest, mn, cats, kitchen, ords] = await Promise.all([
+          supabaseRestaurantApi.getRestaurant(),
+          supabaseRestaurantApi.getMenu(),
+          supabaseRestaurantApi.getCategories(),
+          supabaseRestaurantApi.getKitchenSnapshot(),
+          supabaseRestaurantApi.getOrders(),
+        ]);
+        if (isMountedRef.current) {
+          setRestaurant(rest);
+          setMenu(mn);
+          setCategories(cats);
+          setKitchenSnapshots(kitchen);
+          setOrders(ords);
+        }
+        return;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          '[RushLess] Supabase connection or queries failed. Gracefully falling back to mock dataset:',
+          msg
+        );
+        if (isMountedRef.current) {
+          setIsLiveSupabase(false);
+        }
+      }
+    }
+
+    // Fallback or default mock dataset
     try {
       const [rest, mn, cats, kitchen, ords] = await Promise.all([
-        api.getRestaurant(),
-        api.getMenu(),
-        api.getCategories(),
-        api.getKitchenSnapshot(),
-        api.getOrders(),
+        mockRestaurantApi.getRestaurant(),
+        mockRestaurantApi.getMenu(),
+        mockRestaurantApi.getCategories(),
+        mockRestaurantApi.getKitchenSnapshot(),
+        mockRestaurantApi.getOrders(),
       ]);
-      setRestaurant(rest);
-      setMenu(mn);
-      setCategories(cats);
-      setKitchenSnapshots(kitchen);
-      setOrders(ords);
-    } catch (err) {
-      console.error('Error refreshing restaurant data:', err);
+      if (isMountedRef.current) {
+        setRestaurant(rest);
+        setMenu(mn);
+        setCategories(cats);
+        setKitchenSnapshots(kitchen);
+        setOrders(ords);
+      }
+    } catch (mockErr) {
+      console.error('[RushLess] Failed to load fallback mock restaurant data:', mockErr);
     }
-  }, [api]);
+  }, [isLiveSupabase]);
 
   useEffect(() => {
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleRefresh = () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        if (isMountedRef.current) {
+          refreshData();
+        }
+      }, 350);
+    };
+
     const loadInitial = async () => {
       try {
         setIsLoading(true);
         await refreshData();
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadInitial();
 
     // Setup Supabase Realtime when connected
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     if (isLiveSupabase) {
-      const channel = supabase
-        .channel('rushless_realtime')
+      const channelId = `rushless_rt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      channel = supabase
+        .channel(channelId)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-          refreshData();
+          scheduleRefresh();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'kitchen_stations' }, () => {
-          refreshData();
+          scheduleRefresh();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
-          refreshData();
+          scheduleRefresh();
         })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn(`[RushLess] Supabase Realtime subscription status: ${status}`, err);
+          }
+        });
     }
+
+    return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      if (channel) {
+        channel.unsubscribe().catch(() => {});
+        supabase.removeChannel(channel).catch(() => {});
+      }
+    };
   }, [isLiveSupabase, refreshData]);
 
-  // Recalculate BreakFit whenever cart, deadline, kitchen, or menu change
+  // Recalculate BreakFit whenever cart, deadline, kitchen, menu, or currentTime change
   const breakFitResult = useMemo<BreakFitResult>(() => {
     return evaluateBreakFit({
       items: cart,
       requestedDeadline: customerDeadline,
       kitchenSnapshots,
       allMenuItems: menu,
+      currentTime,
       bufferMinutes: restaurant?.defaultBufferMinutes || 3,
     });
-  }, [cart, customerDeadline, kitchenSnapshots, menu, restaurant]);
+  }, [cart, customerDeadline, kitchenSnapshots, menu, restaurant, currentTime]);
 
   const addToCart = (item: MenuItem, quantity = 1) => {
     setCart((prev) => {
@@ -223,12 +301,28 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
+  const getOrder = useCallback(
+    async (id: string): Promise<CustomerOrder | null> => {
+      if (!id) return null;
+      if (isLiveSupabase) {
+        try {
+          const remote = await supabaseRestaurantApi.getOrder(id);
+          if (remote) return remote;
+        } catch (err) {
+          console.warn('[RushLess] getOrder from Supabase failed, searching local orders:', err);
+        }
+      }
+      return mockRestaurantApi.getOrder(id);
+    },
+    [isLiveSupabase]
+  );
+
   const placeCustomerOrder = async (): Promise<CustomerOrder> => {
     if (cart.length === 0) {
       throw new Error('Cannot place an empty order');
     }
 
-    const order = await api.createDemoOrder({
+    const orderInput = {
       orderType,
       customerName: customerName.trim() || 'Demo Guest',
       customerPhone: customerPhone.trim() || undefined,
@@ -239,7 +333,24 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         notes: ci.notes,
       })),
       requestedDeadline: customerDeadline,
-    });
+    };
+
+    let order: CustomerOrder;
+    if (isLiveSupabase) {
+      try {
+        order = await supabaseRestaurantApi.createDemoOrder(orderInput);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          '[RushLess] Supabase createDemoOrder failed, gracefully falling back to mock order storage:',
+          msg
+        );
+        setIsLiveSupabase(false);
+        order = await mockRestaurantApi.createDemoOrder(orderInput);
+      }
+    } else {
+      order = await mockRestaurantApi.createDemoOrder(orderInput);
+    }
 
     setLastPlacedOrder(order);
     setCart([]);
@@ -248,23 +359,70 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, note?: string) => {
-    await api.updateDemoOrderStatus(orderId, status, note);
+    if (isLiveSupabase) {
+      try {
+        await supabaseRestaurantApi.updateDemoOrderStatus(orderId, status, note);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          '[RushLess] Supabase updateDemoOrderStatus failed, updating in mock storage:',
+          msg
+        );
+        await mockRestaurantApi.updateDemoOrderStatus(orderId, status, note);
+      }
+    } else {
+      await mockRestaurantApi.updateDemoOrderStatus(orderId, status, note);
+    }
     await refreshData();
   };
 
   const createWalkInOrder = async (input: CreateWalkInOrderInput): Promise<CustomerOrder> => {
-    const order = await api.createWalkInOrder(input);
+    let order: CustomerOrder;
+    if (isLiveSupabase) {
+      try {
+        order = await supabaseRestaurantApi.createWalkInOrder(input);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          '[RushLess] Supabase createWalkInOrder failed, falling back to mock storage:',
+          msg
+        );
+        order = await mockRestaurantApi.createWalkInOrder(input);
+      }
+    } else {
+      order = await mockRestaurantApi.createWalkInOrder(input);
+    }
     await refreshData();
     return order;
   };
 
   const toggleMenuItemAvailability = async (itemId: string, available: boolean) => {
-    await api.updateMenuAvailability(itemId, available);
+    if (isLiveSupabase) {
+      try {
+        await supabaseRestaurantApi.updateMenuAvailability(itemId, available);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          '[RushLess] Supabase updateMenuAvailability failed, falling back to mock storage:',
+          msg
+        );
+        await mockRestaurantApi.updateMenuAvailability(itemId, available);
+      }
+    } else {
+      await mockRestaurantApi.updateMenuAvailability(itemId, available);
+    }
     await refreshData();
   };
 
   const resetDemoSession = async () => {
-    await api.resetDemoData();
+    if (isLiveSupabase) {
+      try {
+        await supabaseRestaurantApi.resetDemoData();
+      } catch (err) {
+        console.warn('[RushLess] Warning: Reset demo data in Supabase skipped:', err);
+      }
+    }
+    await mockRestaurantApi.resetDemoData();
     setCart([]);
     setLastPlacedOrder(null);
     await refreshData();
@@ -289,6 +447,8 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         isLoading,
         isLiveSupabase,
         lastPlacedOrder,
+        currentTime,
+        isHydrated,
         addToCart,
         removeFromCart,
         updateQuantity,
@@ -301,6 +461,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         setTableNumber,
         setIsCartOpen,
         applyAlternativeSuggestion,
+        getOrder,
         placeCustomerOrder,
         updateOrderStatus,
         createWalkInOrder,
