@@ -134,6 +134,19 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 );
 
 -- 8. AUTO-INSERT STATUS HISTORY ON ORDER STATUS UPDATE
+CREATE OR REPLACE FUNCTION set_orders_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_orders_updated_at ON orders;
+CREATE TRIGGER trg_orders_updated_at
+BEFORE UPDATE ON orders
+FOR EACH ROW EXECUTE FUNCTION set_orders_updated_at();
+
 CREATE OR REPLACE FUNCTION record_order_status_history()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -148,7 +161,6 @@ BEGIN
             END,
             NOW()
         );
-        NEW.updated_at = NOW();
     END IF;
     RETURN NEW;
 END;
@@ -156,7 +168,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_order_status_history ON orders;
 CREATE TRIGGER trg_order_status_history
-BEFORE INSERT OR UPDATE ON orders
+AFTER INSERT OR UPDATE ON orders
 FOR EACH ROW EXECUTE FUNCTION record_order_status_history();
 
 -- 9. ROW LEVEL SECURITY (RLS) POLICIES
