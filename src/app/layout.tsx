@@ -7,9 +7,31 @@ import { Footer } from '@/components/layout/Footer';
 import { InteractiveBackground } from '@/components/layout/InteractiveBackground';
 
 export const metadata: Metadata = {
-  title: 'RushLess — Crossroads Global Food Hall',
+  title: 'RushLess — Time-Aware Food Hall Ordering & Kitchen Live KDS',
   description:
-    'Order ahead with live kitchen wait times so your food is ready the minute you arrive.',
+    'Order ahead with live kitchen wait times and BreakFit™ smart scheduling. Fresh food, timed to your break.',
+  keywords: [
+    'food hall',
+    'campus ordering',
+    'kitchen display system',
+    'BreakFit',
+    'time-aware ordering',
+    'fast casual dining',
+  ],
+  authors: [{ name: 'RushLess Team' }],
+  openGraph: {
+    title: 'RushLess — Time-Aware Food Hall Ordering',
+    description: 'Fresh food, ready the minute you arrive. Live kitchen queues and smart time matching.',
+    siteName: 'RushLess',
+    type: 'website',
+  },
+};
+
+export const viewport = {
+  themeColor: '#183F35',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
