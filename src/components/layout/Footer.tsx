@@ -32,16 +32,21 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/" className="hover:text-[#183F35] transition-colors">
-                  Storefront Menu
+                  Role Selector Gateway
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="hover:text-[#183F35] transition-colors">
-                  Kitchen Live Queue
+                <Link href="/menu" className="hover:text-[#183F35] transition-colors">
+                  Customer Storefront Menu
                 </Link>
               </li>
               <li>
-                <Link href="/admin/menu" className="hover:text-[#183F35] transition-colors">
+                <Link href="/kitchen" className="hover:text-[#183F35] transition-colors">
+                  Kitchen Live Queue (KDS)
+                </Link>
+              </li>
+              <li>
+                <Link href="/kitchen/menu" className="hover:text-[#183F35] transition-colors">
                   Menu Stock Controls
                 </Link>
               </li>

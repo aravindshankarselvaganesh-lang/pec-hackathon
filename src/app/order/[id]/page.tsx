@@ -138,13 +138,13 @@ export default function OrderStatusPage() {
         </p>
         <div className="pt-4 flex items-center justify-center gap-3">
           <Link
-            href="/"
+            href="/menu"
             className="px-5 py-2.5 rounded-xl bg-[#183F35] text-white text-xs font-semibold hover:bg-[#245447] transition-all active:scale-95 shadow-xs"
           >
             Back to Food Hall Menu
           </Link>
           <Link
-            href="/admin"
+            href="/kitchen"
             className="px-5 py-2.5 rounded-xl border border-[#E7E5DD] bg-white text-xs font-semibold text-[#202923] hover:bg-[#F7F5EF] transition-all active:scale-95"
           >
             View Kitchen Live Queue
@@ -180,10 +180,10 @@ export default function OrderStatusPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      {/* Back button & Admin Shortcut */}
+      {/* Back button & Kitchen Shortcut */}
       <div className="flex items-center justify-between text-xs">
         <Link
-          href="/"
+          href="/menu"
           className="inline-flex items-center gap-1.5 text-[#183F35] font-bold hover:underline"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function OrderStatusPage() {
         </Link>
 
         <Link
-          href="/admin"
+          href="/kitchen"
           className="inline-flex items-center gap-1.5 text-[#707A73] hover:text-[#183F35] font-medium"
         >
           <span>Inspect on Kitchen Dashboard</span>

@@ -1,270 +1,171 @@
 'use client';
 
-import React, { useState } from 'react';
-import { HeroSection } from '@/components/customer/HeroSection';
-import { BentoShowcase } from '@/components/customer/BentoShowcase';
-import { MenuCategoryTabs, QuickFilterType } from '@/components/customer/MenuCategoryTabs';
-import { MenuItemCard } from '@/components/customer/MenuItemCard';
-import { BreakFitPanel } from '@/components/breakfit/BreakFitPanel';
-import { CartDrawer } from '@/components/customer/CartDrawer';
-import { MobileBottomBar } from '@/components/customer/MobileBottomBar';
-import { useRestaurant } from '@/context/restaurant-context';
-import { Clock, Sparkles, ChefHat, Zap, Flame, Plus } from 'lucide-react';
+import React from 'react';
+import Link from 'next/link';
+import {
+  Utensils,
+  ChefHat,
+  Clock,
+  Sparkles,
+  ArrowRight,
+  Flame,
+  CheckCircle2,
+  Lock,
+  ShoppingBag,
+  SlidersHorizontal,
+} from 'lucide-react';
 
-export default function CustomerStorefrontPage() {
-  const { menu, isLoading, addToCart, setIsCartOpen } = useRestaurant();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [quickFilter, setQuickFilter] = useState<QuickFilterType>('all');
-
-  // Filter items across category, search, and express quick filters
-  const filteredItems = menu.filter((item) => {
-    const matchesCategory =
-      selectedCategoryId === 'all' || item.categoryId === selectedCategoryId;
-    const matchesSearch =
-      searchQuery.trim() === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    let matchesQuick = true;
-    if (quickFilter === 'under5') {
-      matchesQuick = item.preparationTimeMinutes <= 5;
-    } else if (quickFilter === 'pureveg') {
-      matchesQuick = item.dietary === 'PURE_VEG' || item.dietary === 'VEGAN';
-    } else if (quickFilter === 'bestseller') {
-      matchesQuick = Boolean(item.isPopular);
-    }
-
-    return matchesCategory && matchesSearch && matchesQuick;
-  });
-
-  // Quick addition for campus combos
-  const handleAddCombo = (itemIds: string[]) => {
-    itemIds.forEach((id) => {
-      const found = menu.find((m) => m.id === id);
-      if (found) addToCart(found, 1);
-    });
-    setIsCartOpen(true);
-  };
-
+export default function GatewayPage() {
   return (
-    <div className="min-w-0 pb-28 sm:pb-20 overflow-x-hidden">
-      {/* 1. Hero Section with Visual Anchor SVG Blob */}
-      <HeroSection />
+    <main className="min-h-[85vh] flex flex-col justify-center max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+      {/* Top Banner / Hero Title */}
+      <div className="text-center space-y-4 max-w-2xl mx-auto mb-10 sm:mb-12">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E6EFE8] text-[#183F35] text-xs font-bold border border-[#183F35]/15 shadow-2xs">
+          <Clock className="w-3.5 h-3.5 text-[#183F35]" />
+          <span>Crossroads Food Hall • Time-Aware Platform</span>
+        </div>
 
-      {/* 2. Main Storefront & Bento Box Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-10" id="bento-section">
-        {/* Bento Grid Architecture */}
-        <BentoShowcase />
+        <h1 className="text-3xl sm:text-5xl font-black text-[#183F35] tracking-tight leading-tight">
+          Welcome to Rush<span className="text-[#D96D4C]">Less</span>
+        </h1>
 
-        {/* Dynamic BreakFit Feasibility Summary (if cart has items or user is checking) */}
-        <section aria-label="BreakFit Feasibility Check">
-          <BreakFitPanel />
-        </section>
+        <p className="text-sm sm:text-base text-[#707A73] leading-relaxed">
+          Where would you like to go? Choose whether you are ordering food as a customer or operating the food stations in the kitchen.
+        </p>
+      </div>
 
-        {/* ========================================================
-            Popular Combos Section
-           ======================================================== */}
-        <section aria-label="Popular Meal Combos" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#E6B65C]" />
-              <h3 className="font-extrabold text-lg sm:text-xl text-[#183F35] tracking-tight">
-                Popular Combos
-              </h3>
-            </div>
-            <span className="text-xs font-medium text-[#707A73]">
-              Quick 1-click meal pairings
-            </span>
-          </div>
+      {/* Gateway Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+        {/* Card 1: Customer Menu (Common to all, no login) */}
+        <div className="bg-white rounded-3xl border-2 border-[#E7E5DD] hover:border-[#183F35] transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-card hover:shadow-xl group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-br from-emerald-100/60 to-transparent rounded-bl-full pointer-events-none -mr-4 -mt-4"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Combo 1: Quick Tiffin & Chai */}
-            <div className="bg-gradient-to-br from-emerald-500/10 via-white to-[#FDF8ED]/40 rounded-[30px] border border-emerald-200/80 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-diffuse hover:border-emerald-300 transition-all duration-300 group">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold text-emerald-900">
-                    ⚡ Quick Tiffin Combo
-                  </span>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-700 text-white shadow-2xs">
-                    Ready in 5m
-                  </span>
-                </div>
-                <h4 className="font-extrabold text-base text-[#202923] group-hover:text-[#183F35] transition-colors">
-                  Bombay Grill Sandwich + Kulhad Chai
-                </h4>
-                <p className="text-xs text-[#707A73] leading-relaxed">
-                  Grilled potato cheese sandwich with hot ginger chai.
-                </p>
-                <div className="flex items-center gap-2.5 pt-1 text-sm">
-                  <span className="font-extrabold text-[#183F35]">₹90</span>
-                  <span className="text-xs line-through text-stone-400">₹95</span>
-                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                    Save ₹5
-                  </span>
-                </div>
+          <div className="space-y-5 relative z-10">
+            {/* Header / Badges */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="w-14 h-14 rounded-2xl bg-[#FAF8F3] text-[#183F35] border border-[#E7E5DD] flex items-center justify-center shadow-2xs group-hover:bg-[#183F35] group-hover:text-[#E6B65C] transition-colors duration-300">
+                <Utensils className="w-7 h-7" />
               </div>
-
-              <button
-                type="button"
-                onClick={() => handleAddCombo(['item-bombay-sandwich', 'item-kulhad-chai'])}
-                className="px-5 py-3 rounded-full bg-[#183F35] text-white hover:bg-[#245447] text-xs font-extrabold flex items-center justify-center gap-2 self-start sm:self-center transition-all shadow-xs active:scale-95 whitespace-nowrap hover:-translate-y-0.5"
-                aria-label="Add Bombay Grill Sandwich and Kulhad Chai combo to cart"
-              >
-                <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
-                <span>Add Combo</span>
-              </button>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Open to Everyone
+              </span>
             </div>
 
-            {/* Combo 2: Burger & Fries */}
-            <div className="bg-gradient-to-br from-amber-500/10 via-white to-[#FDF2EF]/40 rounded-[30px] border border-amber-200/80 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-diffuse hover:border-amber-300 transition-all duration-300 group">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold text-amber-950">
-                    🍔 Burger & Fries Combo
-                  </span>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-600 text-white shadow-2xs">
-                    Ready in 8m
-                  </span>
-                </div>
-                <h4 className="font-extrabold text-base text-[#202923] group-hover:text-[#183F35] transition-colors">
-                  Smash Burger + Peri Peri Fries + Shikanji
-                </h4>
-                <p className="text-xs text-[#707A73] leading-relaxed">
-                  Brioche veggie burger with spiced fries and fresh lemon soda.
-                </p>
-                <div className="flex items-center gap-2.5 pt-1 text-sm">
-                  <span className="font-extrabold text-[#183F35]">₹220</span>
-                  <span className="text-xs line-through text-stone-400">₹235</span>
-                  <span className="text-[10px] font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
-                    Save ₹15
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleAddCombo(['item-smash-burger', 'item-truffle-fries', 'item-nimbu-shikanji'])}
-                className="px-5 py-3 rounded-full bg-[#183F35] text-white hover:bg-[#245447] text-xs font-extrabold flex items-center justify-center gap-2 self-start sm:self-center transition-all shadow-xs active:scale-95 whitespace-nowrap hover:-translate-y-0.5"
-                aria-label="Add Smash Burger, Peri Peri Fries, and Shikanji combo to cart"
-              >
-                <Plus className="w-4 h-4 text-[#E6B65C]" aria-hidden="true" />
-                <span>Add Combo</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ========================================================
-            Menu Navigation & Search
-           ======================================================== */}
-        <section aria-label="Menu Items Navigation" id="menu-section">
-          <MenuCategoryTabs
-            selectedCategoryId={selectedCategoryId}
-            onSelectCategory={setSelectedCategoryId}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            quickFilter={quickFilter}
-            onQuickFilterChange={setQuickFilter}
-          />
-        </section>
-
-        {/* ========================================================
-            Menu Items Grid with Organic Tactile Cards
-           ======================================================== */}
-        <section aria-label="Menu List">
-          {isLoading ? (
-            <div className="py-20 text-center text-xs text-[#707A73]">
-              Loading food hall menu...
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="bg-white rounded-[32px] border border-[#E7E5DD] p-12 text-center space-y-3 shadow-diffuse">
-              <ChefHat className="w-12 h-12 text-stone-300 mx-auto" aria-hidden="true" />
-              <h4 className="font-extrabold text-base text-[#202923]">No items match your criteria</h4>
-              <p className="text-xs text-[#707A73] max-w-sm mx-auto">
-                Try clearing express filters or click &ldquo;All Cuisines&rdquo; to reset category filters.
+            <div className="space-y-1.5">
+              <h2 className="text-2xl font-black text-[#183F35] tracking-tight group-hover:text-[#183F35]">
+                Customer Menu & Ordering
+              </h2>
+              <p className="text-xs sm:text-sm text-[#707A73] leading-relaxed">
+                Browse food hall counters, check live prep times with BreakFit™, order meals, and track progress without needing an account.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategoryId('all');
-                  setSearchQuery('');
-                  setQuickFilter('all');
-                }}
-                className="px-5 py-2.5 rounded-full bg-[#183F35] text-white text-xs font-bold hover:bg-[#245447] transition-all active:scale-95 shadow-xs"
-              >
-                Reset Menu Filters
-              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <MenuItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* ========================================================
-            How It Works Section
-           ======================================================== */}
-        <section
-          id="how-breakfit-works"
-          className="rounded-[32px] border border-[#E7E5DD] bg-white p-6 sm:p-8 space-y-4 shadow-diffuse relative overflow-hidden"
+            {/* Feature bullets */}
+            <ul className="space-y-2.5 text-xs text-[#202923] pt-2">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span><strong>No Sign-In Required:</strong> Instant access for all guests</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#E6B65C] flex-shrink-0" />
+                <span><strong>BreakFit™ Smart Scheduling:</strong> Target pickup deadlines</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-[#D96D4C] flex-shrink-0" />
+                <span><strong>Live Order Tracking:</strong> Real-time ticket updates</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-8 relative z-10">
+            <Link
+              href="/menu"
+              className="w-full py-3.5 px-6 rounded-2xl bg-[#183F35] text-white hover:bg-[#245447] text-sm font-extrabold flex items-center justify-center gap-2.5 shadow-md active:scale-98 transition-all group-hover:shadow-lg"
+            >
+              <span>Browse Customer Menu</span>
+              <ArrowRight className="w-4 h-4 text-[#E6B65C] group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <p className="text-[11px] text-center text-[#707A73] mt-2.5">
+              Public menu • Full dish catalogue & combos
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Demo Kitchen (Requires kitchen demo login / PIN) */}
+        <div className="bg-white rounded-3xl border-2 border-[#E7E5DD] hover:border-[#D96D4C] transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-card hover:shadow-xl group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-br from-amber-100/60 to-transparent rounded-bl-full pointer-events-none -mr-4 -mt-4"></div>
+
+          <div className="space-y-5 relative z-10">
+            {/* Header / Badges */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="w-14 h-14 rounded-2xl bg-[#FAF8F3] text-[#D96D4C] border border-[#E7E5DD] flex items-center justify-center shadow-2xs group-hover:bg-[#183F35] group-hover:text-[#E6B65C] transition-colors duration-300">
+                <ChefHat className="w-7 h-7" />
+              </div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                <span>Demo Kitchen Login</span>
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-2xl font-black text-[#183F35] tracking-tight">
+                Demo Kitchen Display (KDS)
+              </h2>
+              <p className="text-xs sm:text-sm text-[#707A73] leading-relaxed">
+                Staff portal for cooks and counter operators. Manage live preparation queues, station workloads, and dish stock in real time.
+              </p>
+            </div>
+
+            {/* Feature bullets */}
+            <ul className="space-y-2.5 text-xs text-[#202923] pt-2">
+              <li className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-[#D96D4C] flex-shrink-0" />
+                <span><strong>Live Order Kanban:</strong> Accept, cook, and mark orders ready</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-[#183F35] flex-shrink-0" />
+                <span><strong>Station Balancer:</strong> Track Fryer, Grill, and Drinks line stress</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#E6B65C] flex-shrink-0" />
+                <span><strong>1-Click Demo Login:</strong> PIN 1234 or instant Chef Pass</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-8 relative z-10">
+            <Link
+              href="/kitchen"
+              className="w-full py-3.5 px-6 rounded-2xl bg-[#FAF8F3] border-2 border-[#183F35] text-[#183F35] hover:bg-[#183F35] hover:text-white text-sm font-extrabold flex items-center justify-center gap-2.5 shadow-sm active:scale-98 transition-all"
+            >
+              <span>Enter Demo Kitchen Portal</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <p className="text-[11px] text-center text-[#707A73] mt-2.5">
+              Staff login required • PIN: <strong className="text-[#183F35]">1234</strong> or 1-Click Demo Chef
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Test Demo Bar */}
+      <div className="mt-10 p-4 rounded-2xl bg-[#FAF8F3] border border-[#E7E5DD] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#707A73]">
+        <div className="flex items-center gap-2 text-center sm:text-left">
+          <Sparkles className="w-4 h-4 text-[#E6B65C] flex-shrink-0" />
+          <span>
+            Quick test shortcut: Inspect a live simulated customer order directly
+          </span>
+        </div>
+        <Link
+          href="/order/ord-rl-021"
+          className="font-bold text-[#183F35] hover:underline flex items-center gap-1"
         >
-          <div className="relative z-10 flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-[#183F35] text-[#E6B65C] flex items-center justify-center font-bold text-sm shadow-xs">
-              <Sparkles className="w-5 h-5 text-[#E6B65C]" />
-            </span>
-            <div>
-              <h3 className="font-extrabold text-lg sm:text-xl text-[#183F35]">
-                How It Works
-              </h3>
-              <p className="text-xs text-[#707A73]">
-                3 simple steps to get your food fresh and on time.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-[#707A73]">
-            <div className="p-4 rounded-2xl bg-[#FAF8F3] border border-[#E7E5DD] space-y-1.5">
-              <div className="flex items-center gap-2 text-[#183F35] font-extrabold text-sm">
-                <Clock className="w-4 h-4 text-[#E6B65C]" />
-                <h4>1. Set Pickup Time</h4>
-              </div>
-              <p>
-                Choose when you need your order before you browse the menu.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF8F3] border border-[#E7E5DD] space-y-1.5">
-              <div className="flex items-center gap-2 text-[#183F35] font-extrabold text-sm">
-                <Flame className="w-4 h-4 text-[#D96D4C]" />
-                <h4>2. Live Queue Check</h4>
-              </div>
-              <p>
-                We track live counter lines to give you realistic prep estimates.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF8F3] border border-[#E7E5DD] space-y-1.5">
-              <div className="flex items-center gap-2 text-[#183F35] font-extrabold text-sm">
-                <Sparkles className="w-4 h-4 text-[#1E7E51]" />
-                <h4>3. Smart Swaps</h4>
-              </div>
-              <p>
-                If a station is busy, we suggest faster alternatives so you stay on schedule.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Slide-in Cart / Tray Drawer */}
-      <CartDrawer />
-
-      {/* Floating Mobile Bottom Bar */}
-      <MobileBottomBar />
-    </div>
+          <span>View Order #RL-021</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+    </main>
   );
 }
